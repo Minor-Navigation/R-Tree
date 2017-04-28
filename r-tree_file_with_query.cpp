@@ -59,7 +59,11 @@ public:
 
 class rtree{
 
+private:
+	
+
 public:
+	vector<ll> nodes_in_box;
 	ll root;
 	fstream file;
 	rtree()
@@ -363,7 +367,7 @@ public:
 			return;
 
 		if(n.isLeaf)
-			cout<<n.id<<endl;
+			nodes_in_box.pb(n.id);
 
 		for(int i=0;i<n.no_child;i++)
 		{
@@ -376,6 +380,7 @@ public:
 
 	void boundingBox(double lo1,double lo2, double la1, double la2, int level)
 	{
+		nodes_in_box.clear();
 		double t;
 		if(lo1>lo2)
 		{
