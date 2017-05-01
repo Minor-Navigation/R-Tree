@@ -12,8 +12,8 @@ using namespace std;
 #define pb push_back
 #define mp make_pair
 #define fastio ios_base::sync_with_stdio(false); cin.tie(0);
-#define fileio freopen("input.txt", "r", stdin); freopen("output.txt", "w", stdout);
-#define MAX_CHILD 100
+#define fileio freopen("NodeDataForRTree.txt", "r", stdin); freopen("output.txt", "w", stdout);
+#define MAX_CHILD 10
 #define null NULL
 #define square(a) a*a
 
@@ -367,7 +367,10 @@ public:
 			return;
 
 		if(n.isLeaf)
+		{
 			nodes_in_box.pb(n.id);
+			cout<<n.id<<" "<<n.level<<endl;
+		}
 
 		for(int i=0;i<n.no_child;i++)
 		{
@@ -410,20 +413,21 @@ int main()
     int level;
     // rtree r;
 
-    // for(int i=0;i<4500;i++)
+    // for(int i=0;i<3394918;i++)
     // {
-    // 	cin>>level>>id>>lo>>la;
-    // 	cout<<level<<" "<<id<<" "<<lo<<" "<<la<<endl;
+    // 	cin>>id>>lo>>la>>level;
+    // 	//cout<<level<<" "<<id<<" "<<lo<<" "<<la<<endl;
     // 	r.insert(lo,la,id,level);
 
     // 	//r.display();
-    // 	cout<<endl<<endl;
+    // 	if(i%1000 == 0)
+    // 	cout<<i<<endl;
     // }
 
-    rtree r(89816,"test.txt");
-    r.boundingBox(70,80,20,30,1);
-    //r.display();
-   
+    rtree r(490811040,"test.txt");
+    r.boundingBox(77.1780,77.2652,28.5985,28.6424,4);
+    // r.boundingBox(70,80,20,30,4);
+   //490811040
     cout<<sizeof(node)<< " "<<r.root;
     return 0;
 }
