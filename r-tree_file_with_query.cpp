@@ -12,14 +12,14 @@ using namespace std;
 #define pb push_back
 #define mp make_pair
 #define fastio ios_base::sync_with_stdio(false); cin.tie(0);
-#define fileio freopen("NodeDataForRTree.txt", "r", stdin); freopen("output.txt", "w", stdout);
+#define fileio freopen("NodeDataForRTreeWithCheck.txt", "r", stdin); freopen("output.txt", "w", stdout);
 #define MAX_CHILD 10
 #define null NULL
 #define square(a) a*a
 
 typedef struct node{
 public:
-	bool isLeaf,isParentLeaf;
+	bool isLeaf,isParentLeaf,isHighway;
 	long long id;
 	int level;
 	double lon1,lat1,lon2,lat2;
@@ -33,6 +33,7 @@ public:
 	node(double lo1,double la1, double lo2,double la2)
 	{
 		isLeaf=false;
+		isHighway=false;
 		lon1=lo1;
 		lat1=la1;
 		lon2=lo2;
@@ -43,9 +44,10 @@ public:
 		for (int i=0;i<=MAX_CHILD;i++)
 			child[i]=-1;
 	}
-	node(double lo, double la,long long i, int l)
+	node(double lo, double la,long long i, int l, bool highway)
 	{
 		isLeaf=true;
+		isHighway=highway;
 		id=i;
 		level=l;
 		isParentLeaf=false;
@@ -85,12 +87,13 @@ public:
 		root=-1;
 		file.open(filename,ios::in | ios::out | ios::trunc | ios::binary);
 	}
-	void insert(double lon, double lat,long long i, int l)
+	void insert(double lon, double lat,long long i, int l,bool highway)
 	{
 		if(root==-1)
 		{
 			node k(lon,lat,lon,lat);
 			k.level = l;
+			k.isHighway = k.isHighway || highway ;
 			file.seekp(0);
 			file.seekg(0);
 			file.write((char*)&k , sizeof(node));
@@ -101,7 +104,7 @@ public:
 			k.child[k.no_child++] = file.tellp();
 			k.isParentLeaf=true;
 
-			node child(lon,lat,i,l);
+			node child(lon,lat,i,l,highway);
 
 			file.write((char*)&child , sizeof(node));
 			file.seekp(root);file.seekg(root);
@@ -109,7 +112,7 @@ public:
 		}
 		else{
 
-			ll p_ptr=insert_rec(lon,lat,i,l,root);
+			ll p_ptr=insert_rec(lon,lat,i,l,highway,root);
 			if(p_ptr==-1)
 				return;
 			node p,r;
@@ -120,7 +123,7 @@ public:
 			file.read((char*)&r , sizeof(node));
 			node r1(min(p.lon1,r.lon1) , min(p.lat1,r.lat1) , max(p.lon2,r.lon2) , max(p.lat2,r.lat2));
 
-
+			r1.isHighway = p.isHighway || r.isHighway ;
 			r1.child[r1.no_child++]=root;
 			r1.child[r1.no_child++]=p_ptr;
 
@@ -138,11 +141,11 @@ public:
 
 		}
 	}
-	ll insert_rec(double lon, double lat,long long i, int l, ll n_ptr)
+	ll insert_rec(double lon, double lat,long long i, int l,bool highway, ll n_ptr)
 	{
 		if(n_ptr==-1)
 		{
-			node n(lon,lat,i,l);
+			node n(lon,lat,i,l,highway);
 			file.seekp(0,ios::end);file.seekg(0,ios::end);
 			n_ptr = file.tellp();
 			file.write((char*)&n , sizeof(node));
@@ -154,13 +157,14 @@ public:
 
 		if(n.isParentLeaf)
 		{
-			n.child[n.no_child] = insert_rec(lon,lat,i,l,-1);
+			n.child[n.no_child] = insert_rec(lon,lat,i,l,highway,-1);
 			n.no_child++;
 			n.lon1 = min(n.lon1,lon);
 			n.lat1=min(n.lat1,lat);
 			n.lon2 = max(n.lon2,lon);
 			n.lat2=max(n.lat2,lat);
 			n.level = min(l,n.level);
+			n.isHighway = n.isHighway || highway;
 			file.seekp(n_ptr);file.seekg(n_ptr);
 			file.write((char*)&n , sizeof(node));
 		}
@@ -207,7 +211,8 @@ public:
 			n.lon2 = max(n.lon2,lon);
 			n.lat2=max(n.lat2,lat);
 			n.level = min(n.level,l);
-			k_ptr=insert_rec(lon,lat,i,l,min1);
+			n.isHighway = n.isHighway || highway;
+			k_ptr=insert_rec(lon,lat,i,l,highway,min1);
 			if(k_ptr!=-1)
 				n.child[n.no_child++] = k_ptr;
 			file.seekp(n_ptr);file.seekg(n_ptr);
@@ -264,9 +269,11 @@ public:
 		n.lon2 = child[it1].lon2;
 		n.lat2 = child[it1].lat2;
 		n.level=child[it1].level;
+		n.isHighway = child[it1].isHighway;
 		node p(child[it2].lon1,child[it2].lat1,child[it2].lon2,child[it2].lat2);
 		p.isParentLeaf=n.isParentLeaf;
 		p.level=child[it2].level;
+		p.isHighway = child[it2].isHighway;
 		n.no_child=0;
 
 		n.child[n.no_child++]= child_ptr[it1];
@@ -295,6 +302,7 @@ public:
 					n.lat1=min(n.lat1 , child[i].lat1);
 					n.lat2=max(n.lat2 , child[i].lat2);
 					n.level=min(n.level,child[i].level);
+					n.isHighway = n.isHighway || child[i].isHighway;
 				}
 				else
 				{
@@ -304,6 +312,7 @@ public:
 					p.lat1=min(p.lat1 , child[i].lat1);
 					p.lat2=max(p.lat2 , child[i].lat2);
 					p.level=min(p.level,child[i].level);
+					p.isHighway = p.isHighway || child[i].isHighway;
 				}
 
 			}
@@ -331,7 +340,7 @@ public:
 		file.seekp(n_ptr);file.seekg(n_ptr);
 		file.read((char*)&n , sizeof(node));
 		
-		cout<<n_ptr<<" "<<n.lon1<<","<<n.lat1<<"  "<<n.lon2<<","<<n.lat2<<" "<<n.level<<" "<<n.id<<" "<<n.no_child<<" "<<n.isLeaf<<" "<<n.isParentLeaf<<"   ";
+		cout<<n_ptr<<" "<<n.lon1<<","<<n.lat1<<"  "<<n.lon2<<","<<n.lat2<<" "<<n.level<<" "<<n.id<<" "<<n.isHighway<<" "<<n.no_child<<" "<<n.isLeaf<<" "<<n.isParentLeaf<<"   ";
 		for(int i=0;i<=MAX_CHILD;i++)
 		{
 			cout<<n.child[i]<<" ";
@@ -401,6 +410,86 @@ public:
 		boundingBox(lo1,lo2,la1,la2,level,root);
 	}
 
+	pair<double,ll> nearestNode(double lon,double lat)
+	{
+		node n;
+		file.seekp(root);file.seekg(root);
+		file.read((char*)&n , sizeof(node));
+		if(n.isHighway)
+			return nearestNode(lon,lat,n);
+		return mp(0.0,-1);
+	}
+	pair<double,ll> nearestNode(double lon,double lat, node n)
+	{
+		//cout<<n.id<<" "<<n.lon1<<","<<n.lat1<<" "<<n.lon2<<","<<n.lat2<<endl;
+		if(n.isLeaf && n.isHighway)
+		{
+
+			double d=((lon-n.lon1)*(lon-n.lon1) + (lat-n.lat1)*(lat-n.lat1));
+			return mp(d,n.id);
+		}
+
+		if(n.isLeaf)
+			return mp(0.0,-1);
+		
+		node child,min;
+		double min_dist=-1.0,lo,la,d;
+		bool check=false;
+		pair<double,ll> ans,temp;
+		ans=mp(0.0,-1);
+		for(int i=0;i<n.no_child;i++)
+		{
+			file.seekp(n.child[i]);file.seekg(n.child[i]);
+			file.read((char*)&child , sizeof(node));
+			if(!child.isHighway)
+				continue;
+
+			//cout<< (lon>=child.lon1) <<(lon<=child.lon2) << (lat>=child.lat1) << (lat<=child.lat2)<<" ";
+			if(lon>=child.lon1 && lon<=child.lon2 && lat>=child.lat1 && lat<=child.lat2)
+			{
+				//cout<<" g ";
+				if(!check)
+					ans=nearestNode(lon,lat,child);
+				else
+				{
+					temp=nearestNode(lon,lat,child);
+					if(temp.first<ans.first)
+						ans=temp;
+				}
+				check=true;
+			}
+			else if(!check)
+			{
+				//cout<<" h ";
+				lo=child.lon1+child.lon2;
+				lo/=2.0;
+				la=child.lat1+child.lat2;
+				la/=2.0;
+				if(min_dist==-1.0)
+				{
+					min=child;
+					min_dist = ((lon-lo)*(lon-lo) + (lat-la)*(lat-la));
+				}
+				else
+				{
+					d = ((lon-lo)*(lon-lo) + (lat-la)*(lat-la));
+					if(d<min_dist)
+					{
+						min_dist=d;
+						min=child;
+					}
+
+				}
+
+			}
+		}
+		if(!check && n.no_child>0)
+			return nearestNode(lon,lat,min);
+
+		return ans;
+
+	}
+
 };
 
 
@@ -411,21 +500,30 @@ int main()
     double lo,la;
     long long id;
     int level;
-    // rtree r;
+    bool isHighway;
+    rtree r;
 
-    // for(int i=0;i<3394918;i++)
-    // {
-    // 	cin>>id>>lo>>la>>level;
-    // 	//cout<<level<<" "<<id<<" "<<lo<<" "<<la<<endl;
-    // 	r.insert(lo,la,id,level);
+    
 
-    // 	//r.display();
-    // 	if(i%1000 == 0)
-    // 	cout<<i<<endl;
-    // }
+    for(int i=0;i<3394918;i++)
+    {
+    	cin>>id>>lo>>la>>level>>isHighway;
+    	//cout<<level<<" "<<id<<" "<<lo<<" "<<la<<endl;
+    	r.insert(lo,la,id,level,isHighway);
 
-    rtree r(490811040,"test.txt");
-    r.boundingBox(77.1780,77.2652,28.5985,28.6424,4);
+    	//r.display();
+    	 if(i%1000 == 0)
+    	 cout<<i<<endl;
+    }
+    //r.display();
+
+
+    // rtree r(264480,"test.txt");
+    // pair<double,ll> p1=r.nearestNode( 77.22767639160156,28.6144580841064455);//249786909
+
+    // cout<<p1.second	<<endl;
+    // rtree r(490811040,"test.txt");
+    // r.boundingBox(77.1780,77.2652,28.5985,28.6424,4);
     // r.boundingBox(70,80,20,30,4);
    //490811040
     cout<<sizeof(node)<< " "<<r.root;
