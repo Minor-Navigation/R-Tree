@@ -410,14 +410,15 @@ public:
 		boundingBox(lo1,lo2,la1,la2,level,root);
 	}
 
-	pair<double,ll> nearestNode(double lon,double lat)
+	ll nearestNode(double lon,double lat)
 	{
 		node n;
 		file.seekp(root);file.seekg(root);
 		file.read((char*)&n , sizeof(node));
+		pair<double,ll> p =nearestNode(lon,lat,n);
 		if(n.isHighway)
-			return nearestNode(lon,lat,n);
-		return mp(0.0,-1);
+			return p.second;
+		return -1;
 	}
 	pair<double,ll> nearestNode(double lon,double lat, node n)
 	{
@@ -519,9 +520,8 @@ int main()
 
 
     // rtree r(264480,"test.txt");
-    // pair<double,ll> p1=r.nearestNode( 77.22767639160156,28.6144580841064455);//249786909
-
-    // cout<<p1.second	<<endl;
+    
+     cout<<r.nearestNode( 77.22767639160156,28.6144580841064455)	<<endl;
     // rtree r(490811040,"test.txt");
     // r.boundingBox(77.1780,77.2652,28.5985,28.6424,4);
     // r.boundingBox(70,80,20,30,4);
